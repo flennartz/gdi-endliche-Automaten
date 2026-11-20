@@ -1,0 +1,1629 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GdI – Endliche Automaten</title>
+    <style>
+        body {margin: 0; padding: 16px; background: #fff;}
+
+        #ea {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.45;
+            max-width: 1920px;
+            border: 1px solid #bbb;
+            border-radius: 14px;
+            padding: 16px 18px;
+            background: #fff;
+            color: #222;
+        }
+
+        #ea h2 {margin: 0 0 0.4em;}
+        #ea h3 {margin: 1.2em 0 0.5em; padding-bottom: 3px; border-bottom: 2px solid #ddd;}
+        #ea h4 {margin: 0.8em 0 0.3em;}
+        #ea p {margin: 0.4em 0;}
+
+        #ea .ea-note, #ea .ea-good, #ea .ea-warning, #ea .ea-error, #ea .ea-info {
+            padding: 7px 10px;
+            margin: 8px 0;
+            border-left: 5px solid #777;
+            background: #f5f5f5;
+        }
+        #ea .ea-note {padding: 8px 12px; margin: 10px 0;}
+        #ea .ea-good {background: #eef8ee; border-left-color: #5d9f5d;}
+        #ea .ea-warning {background: #fff8e8; border-left-color: #c9952f;}
+        #ea .ea-error {background: #fdeeee; border-left-color: #c0392b;}
+        #ea .ea-info {background: #eef3fd; border-left-color: #3367d6;}
+        #ea .ea-note ul, #ea .ea-good ul, #ea .ea-warning ul, #ea .ea-error ul, #ea .ea-info ul {margin: 2px 0; padding-left: 22px;}
+
+        #ea code, #ea .ea-sym {
+            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+            background: #eee;
+            padding: 1px 5px;
+            border-radius: 4px;
+        }
+        #ea .ea-small {font-size: 0.9em; color: #555;}
+
+        #ea button {
+            padding: 5px 10px;
+            border-radius: 7px;
+            border: 1px solid #999;
+            cursor: pointer;
+            background: #f3f3f3;
+            margin: 0;
+            font-size: 0.93em;
+            color: #222;
+        }
+        #ea button:hover {background: #e8e8e8;}
+        #ea button:disabled {cursor: default; opacity: 0.45;}
+        #ea button[aria-pressed="true"] {background: #dbe7fd; border-color: #3367d6; color: #1a3f8f; font-weight: 600;}
+
+        #ea select, #ea input[type="text"] {
+            padding: 5px 8px;
+            border: 1px solid #aaa;
+            border-radius: 7px;
+            font-size: 1em;
+            background: #fff;
+        }
+        #ea input[type="text"] {font-family: ui-monospace, SFMono-Regular, Consolas, monospace;}
+
+        #ea .ea-bar {display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0;}
+        #ea .ea-sep {display: inline-block; width: 1px; height: 24px; background: #ccc; margin: 0 6px;}
+        #ea .ea-cols {display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start;}
+        #ea .ea-col-table {flex: 0 1 auto; min-width: 0; max-width: 100%; overflow-x: auto;}
+        #ea .ea-col-info {flex: 1 1 300px; min-width: 0;}
+        #ea .ea-col-tape {flex: 1 1 440px; min-width: 0;}
+        #ea .ea-col-diagram {flex: 1 1 360px; min-width: 0; border: 1px solid #ddd; border-radius: 10px; padding: 6px 8px; background: #fff;}
+
+        #ea .ea-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 9px;
+            border: 1px solid #bbb;
+            border-radius: 999px;
+            background: #fff;
+            font-size: 0.93em;
+        }
+        #ea .ea-chip.ea-final {background: #eef8ee; border-color: #5d9f5d;}
+        #ea button.ea-chip {font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.88em;}
+
+        /* ---------- Tabellen ---------- */
+        #ea table.ea-tab {border-collapse: collapse; margin: 4px 0;}
+        #ea table.ea-tab th, #ea table.ea-tab td {border: 1px solid #ccc; padding: 2px 6px; text-align: left; vertical-align: middle;}
+        #ea table.ea-tab th {background: #f3f3f3; font-size: 0.92em;}
+        #ea table.ea-tab input[type="text"] {box-sizing: border-box; width: 6.5em; padding: 3px 6px;}
+        #ea table.ea-tab button {padding: 2px 8px;}
+        #ea table.ea-tab .ea-nr {color: #777; text-align: right;}
+        #ea table.ea-tab .ea-mark {color: #3367d6; font-weight: 700; text-align: center; white-space: nowrap;}
+        #ea table.ea-tab tr.ea-err td {background: #fdeeee;}
+        #ea table.ea-tab td.ea-c {text-align: center; font-family: ui-monospace, SFMono-Regular, Consolas, monospace;}
+        #ea table.ea-tab td.ea-x {color: #b3361f;}
+        #ea table.ea-tab td.ea-eq {background: #dff2df; color: #1e6b22; font-weight: 700;}
+        #ea table.ea-tab td.ea-blank {border: none; background: transparent;}
+
+        #ea textarea {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #aaa;
+            border-radius: 7px;
+            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+            font-size: 0.92em;
+        }
+        #ea details {margin: 8px 0;}
+        #ea summary {cursor: pointer; font-weight: 600;}
+
+        /* ---------- Diagramm ---------- */
+        #ea .ea-diagram svg {display: block; width: 100%; height: auto; max-height: 380px; margin: 0 auto; overflow: visible;}
+        #ea .ea-nodeg {transform-box: fill-box; transform-origin: center;}
+        #ea .ea-nodeg.ea-pulse {animation: ea-pulse 500ms ease-out;}
+        #ea .ea-node {fill: #fff; stroke: #444; stroke-width: 1.6;}
+        #ea .ea-node.ea-cur {fill: #dbe7fd; stroke: #3367d6; stroke-width: 2.6;}
+        #ea .ea-node.ea-curfinal {fill: #dff2df; stroke: #2e7d32; stroke-width: 2.6;}
+        #ea .ea-node.ea-curreject {fill: #fdeeee; stroke: #c0392b; stroke-width: 2.6;}
+        #ea .ea-ripple {fill: none; stroke: #3367d6; stroke-width: 3; transform-box: fill-box; transform-origin: center; pointer-events: none; animation: ea-ripple 500ms ease-out forwards;}
+        #ea .ea-edge {fill: none; stroke: #777; stroke-width: 1.4;}
+        #ea .ea-edge.ea-used {stroke: #e07b00; stroke-width: 2.6;}
+        #ea .ea-elabel {
+            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+            font-size: 13px;
+            fill: #333;
+            paint-order: stroke;
+            stroke: #fff;
+            stroke-width: 4px;
+            stroke-linejoin: round;
+        }
+        #ea .ea-elabel.ea-used {fill: #c96a00; font-weight: 700;}
+        #ea .ea-slabel {font-size: 16px; fill: #222;}
+
+        @keyframes ea-pulse {0% {transform: scale(1);} 35% {transform: scale(1.3);} 100% {transform: scale(1);} }
+        @keyframes ea-ripple {0% {transform: scale(1); opacity: 0.8;} 100% {transform: scale(2.1); opacity: 0;} }
+        @keyframes ea-bump {0% {transform: scale(1);} 40% {transform: scale(1.3);} 100% {transform: scale(1);} }
+
+        /* ---------- Wort ---------- */
+        #ea .ea-tapewrap {overflow-x: auto; border: 1px solid #ddd; border-radius: 10px; background: #fafafa; padding: 6px 8px 8px;}
+        #ea .ea-tape {position: relative; padding-top: 38px; min-height: 40px;}
+        #ea .ea-cells {display: flex;}
+        #ea .ea-c {
+            flex: 0 0 38px;
+            width: 38px;
+            height: 40px;
+            box-sizing: border-box;
+            border: 1px solid #999;
+            margin-left: -1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+            font-size: 20px;
+        }
+        #ea .ea-c.ea-read {background: #eee; color: #999;}
+        #ea .ea-c.ea-next {outline: 3px solid #3367d6; outline-offset: -3px;}
+        #ea .ea-c.ea-end {flex-basis: 52px; width: 52px; border-style: dashed; color: #888; font-size: 12px; font-family: inherit;}
+        #ea .ea-head {
+            position: absolute;
+            top: 0;
+            transform: translateX(-50%);
+            text-align: center;
+            line-height: 1.1;
+            white-space: nowrap;
+            color: #3367d6;
+            transition: left 0.25s ease;
+        }
+        #ea .ea-head .ea-lab {display: inline-block; font-weight: 700;}
+        #ea .ea-head .ea-lab.ea-bump {animation: ea-bump 450ms ease-out;}
+        #ea .ea-status {margin: 6px 0;}
+        #ea #ea-word {width: 14em;}
+        #ea #ea-speed {width: 90px;}
+
+        #ea .ea-log {
+            max-height: 190px;
+            overflow-y: auto;
+            list-style: none;
+            margin: 6px 0;
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fff;
+            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+            font-size: 0.9em;
+        }
+        #ea .ea-log li {padding: 1px 0; white-space: nowrap;}
+
+        /* ---------- Berechnungsbaum ---------- */
+        #ea .ea-treewrap {overflow: auto; max-height: 380px; border: 1px solid #ddd; border-radius: 10px; background: #fff; padding: 4px;}
+        #ea .ea-treewrap svg {display: block;}
+        #ea .ea-tnode {fill: #fff; stroke: #666; stroke-width: 1.4;}
+        #ea .ea-tnode.ea-front {fill: #dbe7fd; stroke: #3367d6; stroke-width: 2.2;}
+        #ea .ea-tnode.ea-acc {fill: #dff2df; stroke: #2e7d32; stroke-width: 2.2;}
+        #ea .ea-tnode.ea-rej {fill: #fdeeee; stroke: #c0392b; stroke-width: 1.8;}
+        #ea .ea-tnode.ea-cut {fill: #eee; stroke: #aaa; stroke-dasharray: 3 2;}
+        #ea .ea-tedge {stroke: #888; stroke-width: 1.3; fill: none;}
+        #ea .ea-tedge.ea-acc {stroke: #2e7d32; stroke-width: 2.6;}
+        #ea .ea-tmark {font-size: 15px; font-weight: 700;}
+        #ea .ea-tmark.ea-acc {fill: #2e7d32;}
+        #ea .ea-tmark.ea-rej {fill: #c0392b;}
+        #ea .ea-tlabel {font-size: 14px; fill: #222;}
+    </style>
+</head>
+<body>
+<div id="ea">
+    <h2>GdI – Simulator für endliche Automaten</h2>
+
+    <p>
+        Legen Sie einen deterministischen (DEA) oder nichtdeterministischen endlichen Automaten (NEA) über seine
+        Übergänge fest und prüfen Sie, welche Wörter er akzeptiert. Der Simulator erkennt selbst, ob es sich um einen
+        DEA oder einen NEA handelt, zeigt den Ablauf im Zustandsdiagramm und bei NEAs im Berechnungsbaum. Außerdem
+        kann er einen NEA in einen DEA umwandeln und DEAs minimieren.
+    </p>
+
+    <div class="ea-note">
+        <strong>So arbeitet der Simulator</strong>
+        <ul>
+            <li>Startzustand ist immer s<sub>0</sub>. Endzustände markieren Sie per Häkchen in der Zustandsliste.</li>
+            <li>Ein Übergang mit der Eingabe <code>ε</code> wird ausgeführt, ohne ein Zeichen zu lesen (nur beim NEA).</li>
+            <li>Ein Wort wird akzeptiert, wenn nach dem Lesen aller Zeichen ein Endzustand erreicht ist – beim NEA genügt
+                ein einziger Rechenweg. Fehlt ein Übergang, bricht dieser Rechenweg ab.</li>
+        </ul>
+    </div>
+
+    <h3>1. Automat</h3>
+
+    <div class="ea-bar">
+        <label for="ea-example">Beispiel:</label>
+        <select id="ea-example"></select>
+        <button id="ea-load-example" type="button">Laden</button>
+        <button id="ea-clear" type="button">Leerer Automat</button>
+        <button id="ea-undo" type="button" hidden title="Den Automaten vor der letzten Umformung wiederherstellen">↶ Vorheriger Automat</button>
+        <span class="ea-sep"></span>
+        <span>Ansicht:</span>
+        <button id="ea-view-list" type="button" aria-pressed="true">Übergangsliste</button>
+        <button id="ea-view-matrix" type="button" aria-pressed="false">Zustandstabelle</button>
+        <span class="ea-sep"></span>
+        <button id="ea-ins-eps" type="button" title="ε in das zuletzt benutzte Feld einfügen">ε einfügen</button>
+    </div>
+
+    <div class="ea-bar">
+        <label for="ea-sigma">Alphabet Σ =</label>
+        <input id="ea-sigma" type="text" spellcheck="false" autocomplete="off" placeholder="z. B. a, b">
+        <span class="ea-small" id="ea-sigma-hint">Zeichen durch Komma getrennt.</span>
+    </div>
+
+    <div class="ea-bar" id="ea-states"></div>
+
+    <div class="ea-cols">
+        <div class="ea-col-table">
+            <div id="ea-table"></div>
+            <div class="ea-bar" id="ea-tablebar"></div>
+        </div>
+        <div class="ea-col-info">
+            <div id="ea-msgs"></div>
+            <details>
+                <summary>Automat als Text importieren oder exportieren</summary>
+                <p class="ea-small">
+                    Markdown-Tabelle mit den Spalten <em>Zustand | Eingabe | Folgezustand</em>, davor optional die Zeilen
+                    <code>Σ = {a, b}</code> und <code>Endzustände: s2</code>. Mehrere Folgezustände dürfen durch Komma getrennt
+                    in einer Zelle stehen. LaTeX wie <code>$`s_0`$</code> oder <code>$`\varepsilon`$</code> ist erlaubt.
+                    Ohne senkrechte Striche genügt eine Zeile je Übergang, z. B. <code>s0 a s1</code>.
+                </p>
+                <textarea id="ea-text" rows="10" spellcheck="false"></textarea>
+                <div class="ea-bar">
+                    <button id="ea-import" type="button">Text übernehmen</button>
+                    <button id="ea-export" type="button">Automat als Text</button>
+                    <span id="ea-textmsg" class="ea-small"></span>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <h3 id="ea-sim-head">2. Simulation</h3>
+
+    <div class="ea-bar">
+        <label for="ea-word">Wort:</label>
+        <input id="ea-word" class="ea-in" type="text" spellcheck="false" autocomplete="off" title="Leer lassen oder ε eingeben für das leere Wort; [Enter] lädt das Wort neu.">
+        <button id="ea-load" type="button">Wort laden</button>
+        <span id="ea-tests" class="ea-bar" style="margin:0"></span>
+    </div>
+
+    <div class="ea-cols">
+        <div class="ea-col-tape">
+            <div id="ea-tapewrap" class="ea-tapewrap">
+                <div class="ea-tape">
+                    <div id="ea-head" class="ea-head"></div>
+                    <div id="ea-cells" class="ea-cells"></div>
+                </div>
+            </div>
+            <div class="ea-bar">
+                <button id="ea-reset" type="button" title="zurück zum Anfang des Wortes">⏮ Zurücksetzen</button>
+                <button id="ea-back" type="button" title="ein Zeichen zurück">◀ Zurück</button>
+                <button id="ea-step" type="button" title="ein Zeichen lesen">Schritt ▶</button>
+                <button id="ea-play" type="button">▶ Abspielen</button>
+                <button id="ea-run" type="button" title="sofort bis zum Ende lesen">⏭ Bis zum Ende</button>
+                <label for="ea-speed" class="ea-small">Tempo</label>
+                <input id="ea-speed" type="range" min="1" max="10" value="5">
+            </div>
+            <div id="ea-status" class="ea-status"></div>
+            <div id="ea-result"></div>
+        </div>
+        <div class="ea-col-diagram">
+            <div id="ea-diagram" class="ea-diagram"></div>
+            <p class="ea-small">
+                Blau: aktive Zustände (pulsieren bei jedem Schritt), orange: zuletzt benutzte Übergänge,
+                doppelter Rand: Endzustand.
+            </p>
+        </div>
+    </div>
+
+    <div id="ea-treebox" hidden>
+        <h4>Berechnungsbaum</h4>
+        <p class="ea-small">
+            Jeder Weg von links nach rechts ist ein möglicher Rechenweg des NEA; an den Kanten steht das gelesene Zeichen
+            bzw. ε. Blau: Rechenwege, die gerade weiterlaufen, ✗: abgebrochen oder ohne Endzustand, ✓: akzeptierend.
+        </p>
+        <div id="ea-treesum"></div>
+        <div id="ea-tree" class="ea-treewrap"></div>
+    </div>
+
+    <details open>
+        <summary>Protokoll</summary>
+        <ol id="ea-log" class="ea-log"></ol>
+    </details>
+
+    <h3>3. Mehrere Wörter testen</h3>
+    <div class="ea-cols">
+        <div class="ea-col-info" style="flex: 0 1 260px;">
+            <label for="ea-batch" class="ea-small">Ein Wort pro Zeile, <code>ε</code> für das leere Wort:</label>
+            <textarea id="ea-batch" rows="8" spellcheck="false"></textarea>
+            <div class="ea-bar"><button id="ea-batch-run" type="button">Alle prüfen</button></div>
+        </div>
+        <div class="ea-col-info" id="ea-batch-res"></div>
+    </div>
+
+    <h3>4. Umformungen</h3>
+    <div class="ea-bar">
+        <button id="ea-btn-powerset" type="button">NEA → DEA (Potenzmengenkonstruktion)</button>
+        <button id="ea-btn-min" type="button">DEA minimieren</button>
+    </div>
+    <div id="ea-transform"></div>
+</div>
+
+<script>
+(function () {
+    "use strict";
+
+    const $ = (id) => document.getElementById(id);
+    const EPS = "\u03b5";
+    const CELL = 38;
+    const TREE_MAX = 600;
+    const DELAYS = [1600, 1100, 800, 560, 400, 270, 170, 100, 50, 15];
+    const SVGNS = "http://www.w3.org/2000/svg";
+
+    function el(tag, cls, text) {
+        const e = document.createElement(tag);
+        if (cls) {e.className = cls;}
+        if (text !== undefined) {e.textContent = text;}
+        return e;
+    }
+    function add(parent, ...kids) {
+        kids.forEach((c) => {
+            if (c == null || c === false) {return;}
+            parent.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+        });
+        return parent;
+    }
+    function button(text, onClick, title) {
+        const b = el("button", null, text);
+        b.type = "button";
+        if (title) {b.title = title;}
+        b.addEventListener("click", onClick);
+        return b;
+    }
+
+    /* ================================================================
+       Beispiele
+       ================================================================ */
+    const EXAMPLES = [
+        {
+            name: "DEA: gerade Anzahl a", sigma: "a, b", finals: ["s0"], word: "abaab",
+            tests: ["", "a", "aa", "abab", "baaab", "aaa"],
+            rows: [["s0", "a", "s1"], ["s0", "b", "s0"], ["s1", "a", "s0"], ["s1", "b", "s1"]]
+        },
+        {
+            /* absichtlich nicht minimal: s0 und s3 sowie s1 und s4 sind aequivalent */
+            name: "DEA: endet auf ab (nicht minimal)", sigma: "a, b", finals: ["s2"], word: "babab",
+            tests: ["ab", "aab", "bab", "abb", "ba", ""],
+            rows: [["s0", "a", "s1"], ["s0", "b", "s3"], ["s1", "a", "s4"], ["s1", "b", "s2"], ["s2", "a", "s1"],
+                ["s2", "b", "s3"], ["s3", "a", "s4"], ["s3", "b", "s0"], ["s4", "a", "s1"], ["s4", "b", "s2"]]
+        },
+        {
+            name: "NEA: drittletztes Zeichen ist a", sigma: "a, b", finals: ["s3"], word: "babb",
+            tests: ["abb", "aab", "aaa", "bab", "ab", "bbabb"],
+            rows: [["s0", "a", "s0"], ["s0", "b", "s0"], ["s0", "a", "s1"], ["s1", "a", "s2"], ["s1", "b", "s2"],
+                ["s2", "a", "s3"], ["s2", "b", "s3"]]
+        },
+        {
+            name: "NEA mit ε: aⁿbᵐ (n, m ≥ 0)", sigma: "a, b", finals: ["s1"], word: "aabb",
+            tests: ["", "aab", "abb", "b", "ba", "aba"],
+            rows: [["s0", "a", "s0"], ["s0", "ε", "s1"], ["s1", "b", "s1"]]
+        }
+    ];
+
+    /* ================================================================
+       Normalisierung
+       ================================================================ */
+    function stripTex(s) {return String(s == null ? "" : s).replace(/[$`]/g, "").trim();}
+    function canon(s) {return String(s).normalize("NFD").replace(/\u0305/g, "\u0304").normalize("NFC");}
+    function graphemes(s) {
+        const m = String(s).normalize("NFD").replace(/\u0305/g, "\u0304").match(/[^\u0300-\u036f][\u0300-\u036f]*/g) || [];
+        return m.map((g) => g.normalize("NFC"));
+    }
+
+    function normSym(raw) {
+        let s = stripTex(raw).replace(/\s+/g, "");
+        if (/^\\?(varepsilon|epsilon|eps)$/i.test(s) || s === "\u03b5" || s === "\u03f5") {return EPS;}
+        let prev;
+        do {
+            prev = s;
+            s = s.replace(/\\(overline|bar)\{([^{}]*)\}/g, (m, c, x) => x + "\u0304").replace(/\\dot\{([^{}]*)\}/g, (m, x) => x + "\u0307");
+        } while (s !== prev);
+        return canon(s);
+    }
+
+    function normState(raw) {
+        return stripTex(raw).replace(/[{}\\_\s\u2192*]/g, "")
+            .replace(/[\u2080-\u2089]/g, (d) => String(d.charCodeAt(0) - 0x2080));
+    }
+
+    function parseTargets(raw) {
+        const s = stripTex(raw).replace(/[{}]/g, " ").trim();
+        if (/^(\u2013|-|\u2205|\\emptyset)?$/.test(s)) {return [];}
+        const out = [];
+        s.split(/[,;\s]+/).map(normState).forEach((t) => {if (t && !out.includes(t)) {out.push(t);} });
+        return out;
+    }
+
+    function parseWord(raw) {
+        const s = String(raw).replace(/\s+/g, "");
+        if (s === EPS || s === "\u03f5") {return [];}
+        return graphemes(s).map(normSym).filter((x) => x !== EPS);
+    }
+
+    const STATE_RE = /^([A-Za-z])([0-9]+|[A-Za-z])$/;
+
+    function stateEl(s) {
+        const span = el("span", "ea-state"), m = STATE_RE.exec(s);
+        if (m) {add(span, m[1], el("sub", null, m[2]));} else {span.textContent = s;}
+        return span;
+    }
+    function symEl(s) {return el("span", "ea-sym", s);}
+    function setEl(M, set) {
+        const span = el("span", "ea-set");
+        add(span, "{");
+        ordered(M, set).forEach((s, i) => add(span, i ? ", " : "", stateEl(s)));
+        add(span, "}");
+        return span;
+    }
+    function setText(names) {return "{" + names.join(", ") + "}";}
+
+    /* ================================================================
+       Modell
+       ================================================================ */
+    let rows = [];              /* {from, sym, to} wie eingegeben; to darf mehrere Zustaende enthalten */
+    let finals = new Set();
+    let extraStates = [];       /* Zustaende ohne Uebergaenge (z. B. aus der Zustandstabelle) */
+    let view = "list";
+    let showEps = false;
+    let A = null;               /* uebersetzter Automat */
+    const undoStack = [];
+    let batchRan = false;
+
+    function compile() {
+        const M = {states: [], sigma: [], sigmaExplicit: false, finals: new Set(), delta: new Map(), trans: [],
+            errors: [], warnings: [], errRows: new Set(), hasEps: false};
+        const seen = new Set();
+        const addState = (s) => {if (s) {if (!seen.has(s)) {seen.add(s); M.states.push(s);} } };
+        const err = (nr, msg) => {M.errors.push({row: nr, msg}); if (nr) {M.errRows.add(nr);} };
+        addState("s0");
+        extraStates.forEach(addState);
+
+        const sigTxt = stripTex($("ea-sigma").value).replace(/[{}]/g, " ").trim();
+        if (sigTxt) {
+            M.sigmaExplicit = true;
+            sigTxt.split(/[,;\s]+/).filter(Boolean).forEach((t) => {
+                const s = normSym(t);
+                if (s === EPS) {err(0, "ε gehört nicht zum Alphabet Σ – es steht für das leere Wort.");}
+                else if (graphemes(s).length !== 1) {err(0, "„" + t + "“ in Σ ist kein einzelnes Zeichen.");}
+                else if (!M.sigma.includes(s)) {M.sigma.push(s);}
+            });
+        }
+
+        const seenTrans = new Set();
+        rows.forEach((r, i) => {
+            const nr = i + 1;
+            const from = normState(r.from), symRaw = stripTex(r.sym), sym = normSym(r.sym), tos = parseTargets(r.to);
+            if (!(from || symRaw || tos.length)) {return;}
+            let bad = false;
+            if (!from) {err(nr, "Der Zustand fehlt."); bad = true;}
+            if (!symRaw) {err(nr, "Die Eingabe fehlt (für einen ε-Übergang „ε“ eintragen)."); bad = true;}
+            else if (sym !== EPS) {
+                if (graphemes(sym).length !== 1) {err(nr, "Die Eingabe muss genau ein Zeichen oder ε sein."); bad = true;}
+                else if (M.sigmaExplicit) {if (!M.sigma.includes(sym)) {err(nr, "Das Zeichen " + sym + " ist nicht im Alphabet Σ."); bad = true;} }
+            }
+            if (!tos.length) {err(nr, "Der Folgezustand fehlt."); bad = true;}
+            if (bad) {return;}
+            addState(from);
+            tos.forEach((to) => {
+                addState(to);
+                const key = from + "|" + sym + "|" + to;
+                if (seenTrans.has(key)) {
+                    M.warnings.push("Zeile " + nr + ": Der Übergang " + from + " –" + sym + "→ " + to + " steht doppelt in der Tabelle.");
+                    return;
+                }
+                seenTrans.add(key);
+                M.trans.push({from, sym, to, row: nr});
+                const k = from + "|" + sym;
+                if (!M.delta.has(k)) {M.delta.set(k, []);}
+                M.delta.get(k).push(to);
+                if (sym === EPS) {M.hasEps = true;} else if (!M.sigmaExplicit) {if (!M.sigma.includes(sym)) {M.sigma.push(sym);} }
+            });
+        });
+        finals.forEach((f) => {if (seen.has(f)) {M.finals.add(f);} });
+        /* s0 zuerst, danach natuerlich sortiert (s2 vor s10) */
+        M.states.sort((a, b) => (a === "s0" ? -1 : b === "s0" ? 1 : a.localeCompare(b, "de", {numeric: true})));
+
+        M.nondet = [];
+        M.trans.filter((t) => t.sym === EPS).forEach((t) => M.nondet.push("ε-Übergang " + t.from + " –ε→ " + t.to));
+        M.delta.forEach((tos, k) => {
+            const [from, sym] = k.split("|");
+            if (sym !== EPS) {if (tos.length > 1) {M.nondet.push("mehrere Folgezustände für (" + from + ", " + sym + "): " + tos.join(", "));} }
+        });
+        M.isDFA = M.nondet.length === 0;
+        M.missing = [];
+        M.states.forEach((s) => M.sigma.forEach((a) => {if (!M.delta.has(s + "|" + a)) {M.missing.push([s, a]);} }));
+        M.complete = M.missing.length === 0;
+
+        const reach = reachable(M);
+        M.unreachable = M.states.filter((s) => !reach.has(s));
+        if (M.unreachable.length) {
+            M.warnings.push("Von s0 aus nicht erreichbar: " + M.unreachable.join(", ") + ". Diese Zustände spielen für die akzeptierte Sprache keine Rolle.");
+        }
+        if (!M.finals.size) {M.warnings.push("Es ist kein Endzustand markiert – der Automat akzeptiert kein einziges Wort.");}
+        if (!M.sigma.length) {M.warnings.push("Das Alphabet Σ ist leer. Tragen Sie Σ oben ein oder legen Sie Übergänge an.");}
+        M.ok = M.errors.length === 0;
+        return M;
+    }
+
+    /* ---------- Automaten-Grundoperationen ---------- */
+    function targets(M, s, a) {return M.delta.get(s + "|" + a) || [];}
+    function closure(M, set) {
+        const out = new Set(set), stack = [...set];
+        while (stack.length) {
+            targets(M, stack.pop(), EPS).forEach((t) => {if (!out.has(t)) {out.add(t); stack.push(t);} });
+        }
+        return out;
+    }
+    function move(M, set, a) {
+        const out = new Set();
+        set.forEach((s) => targets(M, s, a).forEach((t) => out.add(t)));
+        return out;
+    }
+    function ordered(M, set) {return M.states.filter((s) => set.has(s));}
+    function reachable(M) {
+        const seen = new Set(["s0"]), stack = ["s0"];
+        while (stack.length) {
+            const s = stack.pop();
+            M.trans.forEach((t) => {if (t.from === s) {if (!seen.has(t.to)) {seen.add(t.to); stack.push(t.to);} } });
+        }
+        return seen;
+    }
+    function runWord(M, word) {
+        let cur = closure(M, new Set(["s0"]));
+        for (let i = 0; i < word.length; i++) {
+            cur = closure(M, move(M, cur, word[i]));
+            if (!cur.size) {return {acc: false, set: cur, stuck: i};}
+        }
+        return {acc: [...cur].some((s) => M.finals.has(s)), set: cur, stuck: -1};
+    }
+    function uniqueName(M, base) {
+        let n = base, i = 2;
+        while (M.states.includes(n)) {n = base + i; i++;}
+        return n;
+    }
+
+    /* ================================================================
+       Tabellenansichten
+       ================================================================ */
+    let rowEls = [];
+    let lastInput = null;
+
+    function renderTableView() {
+        $("ea-view-list").setAttribute("aria-pressed", String(view === "list"));
+        $("ea-view-matrix").setAttribute("aria-pressed", String(view === "matrix"));
+        const focusKey = document.activeElement ? document.activeElement.dataset.key : null;
+        if (view === "list") {renderList();} else {renderMatrix();}
+        if (focusKey) {
+            const f = $("ea-table").querySelector('[data-key="' + CSS.escape(focusKey) + '"]');
+            if (f) {f.focus();}
+        }
+    }
+
+    function tidy(k, v) {
+        if (k === "from") {return normState(v);}
+        if (k === "to") {return parseTargets(v).join(", ");}
+        return normSym(v);
+    }
+
+    function renderList() {
+        const host = $("ea-table");
+        host.innerHTML = "";
+        rowEls = [];
+        const t = el("table", "ea-tab");
+        add(t, add(el("thead"), add(el("tr"), el("th", null, "Nr."), el("th", null, "Zustand"), el("th", null, "Eingabe"),
+            el("th", null, "Folgezustand"), el("th"))));
+        const tb = el("tbody");
+        rows.forEach((r, i) => {
+            const tr = el("tr");
+            tr.appendChild(el("td", "ea-nr", String(i + 1)));
+            [["from", "Zustand"], ["sym", "Eingabe"], ["to", "Folgezustand"]].forEach(([k, label]) => {
+                const inp = el("input", "ea-in" + (k === "sym" ? " ea-one" : ""));
+                inp.type = "text";
+                inp.value = r[k];
+                inp.spellcheck = false;
+                inp.autocomplete = "off";
+                inp.dataset.key = "row" + i + k;
+                inp.setAttribute("aria-label", label + ", Zeile " + (i + 1));
+                inp.addEventListener("input", () => {r[k] = inp.value; changed(false);});
+                inp.addEventListener("change", () => {
+                    const v = tidy(k, inp.value);
+                    if (v !== inp.value) {inp.value = v; r[k] = v; changed(false);}
+                });
+                tr.appendChild(add(el("td"), inp));
+            });
+            tr.appendChild(add(el("td"), button("\u2715", () => {
+                rows.splice(i, 1);
+                if (!rows.length) {rows.push(emptyRow());}
+                changed(true);
+            }, "Zeile " + (i + 1) + " löschen")));
+            tb.appendChild(tr);
+            rowEls.push(tr);
+        });
+        host.appendChild(add(t, tb));
+
+        const bar = $("ea-tablebar");
+        bar.innerHTML = "";
+        add(bar, button("+ Zeile hinzufügen", () => {
+            rows.push(emptyRow());
+            changed(true);
+            const inp = rowEls[rowEls.length - 1].querySelector("input");
+            if (inp) {inp.focus();}
+        }), el("span", "ea-small", "Mehrere Folgezustände: eine Zeile pro Übergang oder durch Komma getrennt."));
+        markRowErrors();
+    }
+
+    function markRowErrors() {
+        rowEls.forEach((tr, i) => tr.classList.toggle("ea-err", A ? A.errRows.has(i + 1) : false));
+    }
+
+    function renderMatrix() {
+        const host = $("ea-table");
+        host.innerHTML = "";
+        rowEls = [];
+        if (A.hasEps) {showEps = true;}
+        const syms = A.sigma.slice();
+        if (showEps) {syms.push(EPS);}
+        const t = el("table", "ea-tab");
+        const hr = add(el("tr"), el("th"), el("th", null, "δ"));
+        syms.forEach((a) => hr.appendChild(el("th", null, a)));
+        hr.appendChild(el("th"));
+        add(t, add(el("thead"), hr));
+        const tb = el("tbody");
+        A.states.forEach((s) => {
+            const tr = el("tr");
+            tr.appendChild(el("td", "ea-mark", (s === "s0" ? "\u2192" : "") + (A.finals.has(s) ? "*" : "")));
+            tr.appendChild(add(el("td"), stateEl(s)));
+            syms.forEach((a) => {
+                const inp = el("input", "ea-in");
+                inp.type = "text";
+                inp.value = targets(A, s, a).join(", ");
+                inp.spellcheck = false;
+                inp.autocomplete = "off";
+                inp.placeholder = "\u2013";
+                inp.dataset.key = "m|" + s + "|" + a;
+                inp.setAttribute("aria-label", "δ(" + s + ", " + a + ")");
+                inp.addEventListener("change", () => setTargets(s, a, parseTargets(inp.value)));
+                tr.appendChild(add(el("td"), inp));
+            });
+            tr.appendChild(add(el("td"), s === "s0" ? null : button("\u2715", () => deleteState(s), "Zustand " + s + " löschen")));
+            tb.appendChild(tr);
+        });
+        host.appendChild(add(t, tb));
+
+        const bar = $("ea-tablebar");
+        bar.innerHTML = "";
+        const name = el("input");
+        name.type = "text";
+        name.placeholder = "z. B. s4";
+        name.style.width = "6em";
+        name.setAttribute("aria-label", "Name des neuen Zustands");
+        const addIt = () => {
+            const s = normState(name.value);
+            if (s) {if (!extraStates.includes(s)) {extraStates.push(s);} }
+            changed(true);
+        };
+        name.addEventListener("keydown", (e) => {if (e.key === "Enter") {addIt();} });
+        const cb = el("input");
+        cb.type = "checkbox";
+        cb.checked = showEps;
+        cb.disabled = A.hasEps;
+        cb.addEventListener("change", () => {showEps = cb.checked; renderTableView();});
+        add(bar, name, button("+ Zustand", addIt), el("span", "ea-sep"), add(el("label", "ea-small"), cb, " Spalte für ε-Übergänge"));
+        if (!A.sigma.length) {add(bar, el("span", "ea-small", "Tragen Sie zuerst das Alphabet Σ ein, dann erscheinen die Spalten."));}
+        if (A.errRows.size) {
+            host.appendChild(el("p", "ea-small", "Zeilen mit Fehlern erscheinen nur in der Übergangsliste."));
+        }
+    }
+
+    function emptyRow() {return {from: "", sym: "", to: ""};}
+
+    function setTargets(s, a, list) {
+        let ins = -1, kept = 0;
+        rows = rows.filter((r) => {
+            const hit = normState(r.from) === s ? normSym(r.sym) === a : false;
+            if (hit) {if (ins === -1) {ins = kept;} } else {kept++;}
+            return !hit;
+        });
+        if (ins === -1) {ins = rows.length;}
+        rows.splice(ins, 0, ...list.map((t) => ({from: s, sym: a, to: t})));
+        rows = rows.filter((r) => r.from || r.sym || r.to);
+        changed(true);
+    }
+
+    function deleteState(s) {
+        rows = rows.filter((r) => normState(r.from) !== s);
+        rows.forEach((r) => {
+            const tos = parseTargets(r.to);
+            if (tos.includes(s)) {r.to = tos.filter((t) => t !== s).join(", ");}
+        });
+        rows = rows.filter((r) => parseTargets(r.to).length);
+        extraStates = extraStates.filter((x) => x !== s);
+        finals.delete(s);
+        changed(true);
+    }
+
+    /* ---------- Zustandsliste mit Endzustaenden ---------- */
+    function renderStates() {
+        const box = $("ea-states");
+        box.innerHTML = "";
+        add(box, el("span", null, "Zustände:"));
+        A.states.forEach((s) => {
+            const lab = el("label", "ea-chip" + (A.finals.has(s) ? " ea-final" : ""));
+            const cb = el("input");
+            cb.type = "checkbox";
+            cb.checked = A.finals.has(s);
+            cb.title = "Endzustand";
+            cb.addEventListener("change", () => {
+                if (cb.checked) {finals.add(s);} else {finals.delete(s);}
+                changed(true);
+            });
+            add(lab, cb, stateEl(s), s === "s0" ? el("span", "ea-small", "(Start)") : null);
+            box.appendChild(lab);
+        });
+        add(box, el("span", "ea-small", "Häkchen = Endzustand"));
+        $("ea-sigma-hint").textContent = A.sigmaExplicit ? "Zeichen durch Komma getrennt." :
+            (A.sigma.length ? "Leer: aus der Tabelle abgeleitet als {" + A.sigma.join(", ") + "}." : "Zeichen durch Komma getrennt.");
+    }
+
+    /* ---------- Meldungen und Typ ---------- */
+    function renderMessages() {
+        const box = $("ea-msgs");
+        box.innerHTML = "";
+        if (A.errors.length) {
+            const ul = el("ul");
+            A.errors.forEach((x) => ul.appendChild(el("li", null, (x.row ? "Zeile " + x.row + ": " : "") + x.msg)));
+            add(box, add(el("div", "ea-error"), el("strong", null, "Der Automat enthält Fehler:"), ul));
+        }
+        const sig = "Σ = {" + A.sigma.join(", ") + "}, " + A.states.length + (A.states.length === 1 ? " Zustand" : " Zustände") +
+            ", F = {" + ordered(A, A.finals).join(", ") + "}";
+        if (A.isDFA) {
+            if (A.complete) {
+                add(box, add(el("div", "ea-good"), el("strong", null, "Typ: DEA"), " – deterministisch und vollständig. ", el("br"), sig));
+            } else {
+                const list = A.missing.slice(0, 8).map((p) => "(" + p[0] + ", " + p[1] + ")").join(", ") + (A.missing.length > 8 ? ", …" : "");
+                add(box, add(el("div", "ea-info"), el("strong", null, "Typ: DEA, aber unvollständig."), " ", sig, el("br"),
+                    "Es fehlen Übergänge für " + list + ". Beim Ablauf führt ein fehlender Übergang zur Ablehnung.",
+                    el("br"), button("Fehlerzustand ergänzen", addTrapState, "Alle fehlenden Übergänge führen danach in einen neuen Fehlerzustand.")));
+            }
+        } else {
+            const ul = el("ul");
+            A.nondet.slice(0, 6).forEach((x) => ul.appendChild(el("li", null, x)));
+            if (A.nondet.length > 6) {ul.appendChild(el("li", null, "…"));}
+            add(box, add(el("div", "ea-info"), el("strong", null, "Typ: NEA"), " – nichtdeterministisch, weil:", ul, sig));
+        }
+        if (A.warnings.length) {
+            const ul = el("ul");
+            A.warnings.forEach((x) => ul.appendChild(el("li", null, x)));
+            add(box, add(el("div", "ea-warning"), el("strong", null, "Hinweise:"), ul));
+        }
+    }
+
+    function addTrapState() {
+        pushUndo();
+        const trap = uniqueName(A, "sf");
+        A.missing.forEach(([s, a]) => rows.push({from: s, sym: a, to: trap}));
+        A.sigma.forEach((a) => rows.push({from: trap, sym: a, to: trap}));
+        changed(true);
+    }
+
+    /* ---------- Rueckgaengig ---------- */
+    function snapshot() {
+        return {rows: rows.map((r) => ({...r})), finals: [...finals], extraStates: extraStates.slice(), sigma: $("ea-sigma").value};
+    }
+    function pushUndo() {
+        undoStack.push(snapshot());
+        $("ea-undo").hidden = false;
+    }
+    function restore(sn) {
+        rows = sn.rows;
+        finals = new Set(sn.finals);
+        extraStates = sn.extraStates;
+        $("ea-sigma").value = sn.sigma;
+    }
+
+    /* ---------- zentrale Aktualisierung ---------- */
+    function changed(table) {
+        A = compile();
+        if (table) {renderTableView();} else {markRowErrors();}
+        renderStates();
+        renderMessages();
+        drawDiagram();
+        $("ea-transform").innerHTML = "";
+        loadWord();
+        if (batchRan) {runBatch();}
+    }
+
+    /* ================================================================
+       Import / Export
+       ================================================================ */
+    function parseText(txt) {
+        const lines = String(txt).split(/\r?\n/);
+        const out = {rows: [], finals: null, sigma: null};
+        const piped = lines.some((l) => l.includes("|"));
+        const after = (l) => l.replace(/^[^=:]*[=:]/, "").replace(/[$`{}]/g, " ").trim();
+        lines.forEach((l) => {
+            const plain = stripTex(l);
+            if (/^\\?(Σ|Sigma)\b|^Σ/i.test(plain)) {out.sigma = after(l); return;}
+            if (/^(Endzust|F\s*[=:]|Final)/i.test(plain)) {out.finals = parseTargets(after(l)); return;}
+            let cells;
+            if (piped) {
+                if (!l.includes("|")) {return;}
+                cells = l.split("|").map((c) => c.trim());
+                if (cells[0] === "") {cells.shift();}
+                if (cells.length) {if (cells[cells.length - 1] === "") {cells.pop();} }
+                if (/^[\s:\-]*$/.test(cells.join(""))) {return;}
+                if (/zustand/i.test(cells[0])) {return;}
+                if (cells.length < 3) {return;}
+                out.rows.push({from: normState(cells[0]), sym: normSym(cells[1]), to: parseTargets(cells.slice(2).join(",")).join(", ")});
+            } else {
+                cells = plain.split(/[\s,;]+/).filter(Boolean);
+                if (cells.length < 3) {return;}
+                out.rows.push({from: normState(cells[0]), sym: normSym(cells[1]), to: parseTargets(cells.slice(2).join(",")).join(", ")});
+            }
+        });
+        return out;
+    }
+
+    function tex(t) {return "$`" + t + "`$";}
+    function texState(s) {
+        const m = STATE_RE.exec(s);
+        return m ? tex(m[1] + "_" + (m[2].length === 1 ? m[2] : "{" + m[2] + "}")) : s;
+    }
+    function texSym(s) {
+        if (s === EPS) {return tex("\\varepsilon");}
+        const d = s.normalize("NFD"), marks = d.slice(1);
+        if (!marks || marks.replace(/[\u0304\u0307]/g, "")) {return s;}
+        let t = d.charAt(0);
+        if (marks.includes("\u0307")) {t = "\\dot{" + t + "}";}
+        if (marks.includes("\u0304")) {t = "\\overline{" + t + "}";}
+        return tex(t);
+    }
+
+    function exportText() {
+        const out = ["Σ = {" + A.sigma.join(", ") + "}", "Endzustände: " + ordered(A, A.finals).join(", "), "",
+            "| Zustand | Eingabe | Folgezustand |", "| ------ | ------ | ------ |"];
+        A.trans.forEach((t) => out.push("| " + texState(t.from) + " | " + texSym(t.sym) + " | " + texState(t.to) + " |"));
+        return out.join("\n");
+    }
+
+    /* ================================================================
+       Zustandsdiagramm
+       ================================================================ */
+    let diag = {nodes: {}, groups: {}, pos: {}, edges: {}, labels: {}, fx: null};
+
+    function svg(tag, attrs, parent) {
+        const e = document.createElementNS(SVGNS, tag);
+        Object.keys(attrs || {}).forEach((k) => e.setAttribute(k, attrs[k]));
+        if (parent) {parent.appendChild(e);}
+        return e;
+    }
+    function stateText(s, x, y, parent, cls) {
+        const t = svg("text", {x, y, "text-anchor": "middle", "dominant-baseline": "central", "class": cls}, parent);
+        const m = STATE_RE.exec(s);
+        if (m) {
+            svg("tspan", {}, t).textContent = m[1];
+            svg("tspan", {dy: 5, "font-size": "0.7em"}, t).textContent = m[2];
+        } else {
+            t.textContent = s;
+        }
+        return t;
+    }
+    const fx = (v) => String(Math.round(v * 10) / 10);
+    const pt = (p) => fx(p.x) + "," + fx(p.y);
+    function unit(dx, dy) {
+        const l = Math.sqrt(dx * dx + dy * dy) || 1;
+        return {x: dx / l, y: dy / l};
+    }
+    function edgeLabel(parent, x, y, ox, oy, text) {
+        let anchor = "middle";
+        if (ox > 0.35) {anchor = "start";} else if (ox < -0.35) {anchor = "end";}
+        const yy = oy < -0.35 ? y : (oy > 0.35 ? y + 10 : y + 4);
+        const t = svg("text", {x: fx(x), y: fx(yy), "text-anchor": anchor, "class": "ea-elabel"}, parent);
+        t.textContent = text;
+        return t;
+    }
+
+    function drawDiagram() {
+        const host = $("ea-diagram");
+        host.innerHTML = "";
+        diag = {nodes: {}, groups: {}, pos: {}, edges: {}, labels: {}, fx: null};
+        const st = A.states, n = st.length, r = 24;
+        const R = n === 1 ? 0 : Math.max(95, n * 28);
+        const pos = diag.pos;
+        st.forEach((s, i) => {
+            const a = Math.PI + 2 * Math.PI * i / n;
+            pos[s] = {x: R * Math.cos(a), y: R * Math.sin(a)};
+        });
+        const groups = new Map();
+        A.trans.forEach((t) => {
+            const g = t.from + "|" + t.to;
+            if (!groups.has(g)) {groups.set(g, {from: t.from, to: t.to, syms: []});}
+            groups.get(g).syms.push(t.sym);
+        });
+
+        const S = svg("svg", {viewBox: fx(-R - 170) + " " + fx(-R - 120) + " " + (2 * R + 340) + " " + (2 * R + 240),
+            role: "img", "aria-label": "Zustandsdiagramm des Automaten"});
+        const defs = svg("defs", {}, S);
+        [["ea-arrow", "#777"], ["ea-arrow-used", "#e07b00"]].forEach(([id, col]) => {
+            const mk = svg("marker", {id, viewBox: "0 0 10 10", refX: 9, refY: 5, markerUnits: "userSpaceOnUse", markerWidth: 10, markerHeight: 10, orient: "auto-start-reverse"}, defs);
+            svg("path", {d: "M0,0 L10,5 L0,10 z", fill: col}, mk);
+        });
+        const gEdges = svg("g", {}, S), gFx = svg("g", {}, S), gNodes = svg("g", {}, S), gLabels = svg("g", {}, S);
+        diag.fx = gFx;
+
+        groups.forEach((e, g) => {
+            const p = pos[e.from], q = pos[e.to];
+            const text = e.syms.join(", ");
+            let d, lx, ly, ox, oy;
+            if (e.from === e.to) {
+                let o = (p.x === 0 && p.y === 0) ? {x: 0, y: -1} : unit(p.x, p.y);
+                let a0 = Math.atan2(o.y, o.x);
+                const k = 78;
+                /* beim Startzustand nicht mit dem Startpfeil kollidieren */
+                if (e.from === st[0]) {a0 += Math.PI / 3; o = {x: Math.cos(a0), y: Math.sin(a0)};}
+                const s1 = {x: p.x + r * Math.cos(a0 - 0.45), y: p.y + r * Math.sin(a0 - 0.45)};
+                const s2 = {x: p.x + r * Math.cos(a0 + 0.45), y: p.y + r * Math.sin(a0 + 0.45)};
+                const c1 = {x: p.x + k * Math.cos(a0 - 0.62), y: p.y + k * Math.sin(a0 - 0.62)};
+                const c2 = {x: p.x + k * Math.cos(a0 + 0.62), y: p.y + k * Math.sin(a0 + 0.62)};
+                d = "M" + pt(s1) + " C" + pt(c1) + " " + pt(c2) + " " + pt(s2);
+                lx = p.x + o.x * 66; ly = p.y + o.y * 66; ox = o.x; oy = o.y;
+            } else {
+                let nv = unit(-(q.y - p.y), q.x - p.x);
+                const twin = groups.has(e.to + "|" + e.from);
+                /* einzelne Kanten nach aussen woelben, damit sich Beschriftungen in der Mitte nicht ueberlagern */
+                if (!twin && nv.x * (p.x + q.x) + nv.y * (p.y + q.y) < 0) {nv = {x: -nv.x, y: -nv.y};}
+                const off = twin ? 38 : 16;
+                const c = {x: (p.x + q.x) / 2 + nv.x * off, y: (p.y + q.y) / 2 + nv.y * off};
+                const ua = unit(c.x - p.x, c.y - p.y), ub = unit(c.x - q.x, c.y - q.y);
+                const s = {x: p.x + ua.x * r, y: p.y + ua.y * r}, t2 = {x: q.x + ub.x * (r + 1), y: q.y + ub.y * (r + 1)};
+                d = "M" + pt(s) + " Q" + pt(c) + " " + pt(t2);
+                lx = 0.25 * s.x + 0.5 * c.x + 0.25 * t2.x + nv.x * 8;
+                ly = 0.25 * s.y + 0.5 * c.y + 0.25 * t2.y + nv.y * 8;
+                ox = nv.x; oy = nv.y;
+            }
+            diag.edges[g] = svg("path", {d, "class": "ea-edge", "marker-end": "url(#ea-arrow)"}, gEdges);
+            diag.labels[g] = edgeLabel(gLabels, lx, ly, ox, oy, text);
+        });
+
+        const s0 = pos[st[0]];
+        svg("path", {d: "M" + fx(s0.x - r - 40) + "," + fx(s0.y) + " L" + fx(s0.x - r - 1) + "," + fx(s0.y), "class": "ea-edge", "marker-end": "url(#ea-arrow)"}, gEdges);
+        st.forEach((s) => {
+            const p = pos[s], g = svg("g", {"class": "ea-nodeg"}, gNodes);
+            const c = svg("circle", {cx: fx(p.x), cy: fx(p.y), r, "class": "ea-node"}, g);
+            if (A.finals.has(s)) {svg("circle", {cx: fx(p.x), cy: fx(p.y), r: r - 4, fill: "none", stroke: "#444", "stroke-width": 1.2}, g);}
+            stateText(s, p.x, p.y, g, "ea-slabel");
+            diag.nodes[s] = c;
+            diag.groups[s] = g;
+        });
+        host.appendChild(S);
+        try {
+            const bb = S.getBBox();
+            if (bb.width) {S.setAttribute("viewBox", fx(bb.x - 14) + " " + fx(bb.y - 14) + " " + fx(bb.width + 28) + " " + fx(bb.height + 28));}
+        } catch (ignore) { /* nicht sichtbar */ }
+    }
+
+    function pulseStates(set, cls) {
+        const dur = Math.max(200, Math.min(650, Math.round(speed() * 0.9))) + "ms";
+        set.forEach((s) => {
+            const g = diag.groups[s], p = diag.pos[s];
+            if (!g) {return;}
+            g.classList.remove("ea-pulse");
+            g.getBoundingClientRect();
+            g.style.animationDuration = dur;
+            g.classList.add("ea-pulse");
+            const ring = svg("circle", {cx: fx(p.x), cy: fx(p.y), r: 24, "class": "ea-ripple"}, diag.fx);
+            ring.style.animationDuration = dur;
+            if (cls) {ring.style.stroke = cls;}
+            setTimeout(() => ring.remove(), 1000);
+        });
+    }
+
+    /* ================================================================
+       Simulation (Teilmengen-Simulation, beim DEA genau ein Zustand)
+       ================================================================ */
+    let sim = null, tree = null, playing = false, timer = null;
+
+    function loadWord() {
+        stopPlay();
+        const word = parseWord($("ea-word").value);
+        sim = {word, k: 0, sets: [], used: [], foreign: [...new Set(word.filter((a) => !A.sigma.includes(a)))]};
+        if (A.ok) {sim.sets.push(closure(A, new Set(["s0"])));}
+        buildTree();
+        render(false);
+    }
+
+    function cur() {return sim.sets[sim.k];}
+    function finished() {
+        if (!A.ok) {return true;}
+        return sim.k === sim.word.length || cur().size === 0;
+    }
+    function outcome() {
+        if (!A.ok) {return "invalid";}
+        if (cur().size === 0) {return "stuck";}
+        if (sim.k === sim.word.length) {return [...cur()].some((s) => A.finals.has(s)) ? "accept" : "reject";}
+        return null;
+    }
+
+    function step() {
+        if (finished()) {return false;}
+        const a = sim.word[sim.k], from = cur();
+        const next = closure(A, move(A, from, a));
+        const used = new Set();
+        from.forEach((s) => targets(A, s, a).forEach((t) => used.add(s + "|" + t)));
+        next.forEach((s) => targets(A, s, EPS).forEach((t) => {if (next.has(t)) {used.add(s + "|" + t);} }));
+        sim.used.push(used);
+        sim.sets.push(next);
+        sim.k++;
+        return true;
+    }
+    function back() {
+        if (sim.k === 0) {return;}
+        sim.sets.pop();
+        sim.used.pop();
+        sim.k--;
+    }
+    function runToEnd() {
+        stopPlay();
+        while (step()) { /* weiter */ }
+        render(true);
+    }
+    function speed() {return DELAYS[(parseInt($("ea-speed").value, 10) || 5) - 1];}
+    function stopPlay() {
+        playing = false;
+        if (timer) {clearTimeout(timer); timer = null;}
+    }
+    function tick() {
+        timer = null;
+        if (!playing) {return;}
+        step();
+        if (finished()) {stopPlay();}
+        render(true);
+        if (playing) {timer = setTimeout(tick, speed());}
+    }
+
+    /* ---------- Darstellung ---------- */
+    function stateOrSet(set) {
+        if (A.isDFA) {return set.size ? stateEl([...set][0]) : el("span", null, "–");}
+        return setEl(A, set);
+    }
+
+    function renderTape(pulse) {
+        const cells = $("ea-cells");
+        cells.innerHTML = "";
+        sim.word.forEach((a, i) => {
+            let cls = "ea-c";
+            if (i < sim.k) {cls += " ea-read";}
+            if (i === sim.k) {cls += " ea-next";}
+            cells.appendChild(el("div", cls, a));
+        });
+        cells.appendChild(el("div", "ea-c ea-end" + (sim.k === sim.word.length ? " ea-next" : ""), sim.word.length ? "Ende" : "ε (leer)"));
+        const head = $("ea-head");
+        head.innerHTML = "";
+        if (A.ok) {
+            const lab = add(el("span", "ea-lab" + (pulse ? " ea-bump" : "")), stateOrSet(cur()));
+            add(head, lab, el("br"), "\u25bc");
+        }
+        const x = sim.k * CELL + (sim.k === sim.word.length ? 26 : CELL / 2);
+        head.style.transitionDuration = Math.min(250, Math.round(speed() * 0.6)) + "ms";
+        head.style.left = x + "px";
+        const wrap = $("ea-tapewrap");
+        if (x < wrap.scrollLeft + CELL || x > wrap.scrollLeft + wrap.clientWidth - 2 * CELL) {
+            wrap.scrollLeft = Math.max(0, x - wrap.clientWidth / 2);
+        }
+    }
+
+    function renderStatus() {
+        const st = $("ea-status"), res = $("ea-result");
+        st.innerHTML = "";
+        res.innerHTML = "";
+        if (!A.ok) {
+            add(res, el("div", "ea-error", "Der Automat enthält Fehler (siehe oben). Bitte korrigieren Sie sie zuerst."));
+            return;
+        }
+        const w = sim.word;
+        add(st, "Gelesen: ", symEl(w.slice(0, sim.k).join("") || "ε"), " \u00b7 Rest: ", symEl(w.slice(sim.k).join("") || "ε"), el("br"),
+            A.isDFA ? "Aktueller Zustand: " : "Aktive Zustände: ", stateOrSet(cur()));
+        if (sim.k === 0) {if (!A.isDFA) {if (cur().size > 1) {add(st, el("span", "ea-small", " (s0 und alles, was per ε erreichbar ist)"));} } }
+        if (sim.foreign.length) {
+            add(res, el("div", "ea-warning", "Das Wort enthält Zeichen, die nicht in Σ sind: " + sim.foreign.join(", ") + ". Für sie gibt es keinen Übergang."));
+        }
+        const o = outcome();
+        if (o === "accept") {
+            const fin = ordered(A, cur()).filter((s) => A.finals.has(s));
+            add(res, add(el("div", "ea-good"), el("strong", null, "Wort akzeptiert: "),
+                A.isDFA ? add(el("span"), "Nach dem ganzen Wort ist der Automat im Endzustand ", stateEl(fin[0]), ".")
+                    : add(el("span"), "Nach dem ganzen Wort ist der Endzustand ", stateEl(fin[0]),
+                        " aktiv – es gibt also mindestens einen akzeptierenden Rechenweg.")));
+        } else if (o === "reject") {
+            add(res, add(el("div", "ea-warning"), el("strong", null, "Wort nicht akzeptiert: "),
+                A.isDFA ? add(el("span"), "Nach dem ganzen Wort ist der Automat in ", stateOrSet(cur()), ", und das ist kein Endzustand.")
+                    : add(el("span"), "Nach dem ganzen Wort ist kein Endzustand aktiv (aktiv: ", setEl(A, cur()), ").")));
+        } else if (o === "stuck") {
+            const a = w[sim.k - 1], before = sim.sets[sim.k - 1];
+            add(res, add(el("div", "ea-warning"), el("strong", null, "Wort nicht akzeptiert: "),
+                A.isDFA ? add(el("span"), "Für Zustand ", stateOrSet(before), " und Zeichen ", symEl(a), " gibt es keinen Übergang.")
+                    : add(el("span"), "Keiner der Zustände ", setEl(A, before), " hat einen Übergang für ", symEl(a), " – alle Rechenwege brechen ab."),
+                sim.k < w.length ? " Der Rest des Wortes wird nicht mehr gelesen." : ""));
+        }
+    }
+
+    function renderLog() {
+        const ol = $("ea-log");
+        ol.innerHTML = "";
+        if (!A.ok) {return;}
+        ol.appendChild(add(el("li"), "Start: ", stateOrSet(sim.sets[0])));
+        for (let i = 1; i <= sim.k; i++) {
+            ol.appendChild(add(el("li"), i + ". ", stateOrSet(sim.sets[i - 1]), " \u2013" + sim.word[i - 1] + "\u2192 ", stateOrSet(sim.sets[i])));
+        }
+        ol.scrollTop = ol.scrollHeight;
+    }
+
+    function highlight() {
+        const o = outcome();
+        const set = A.ok ? cur() : new Set();
+        Object.keys(diag.nodes).forEach((s) => {
+            const c = diag.nodes[s], on = set.has(s);
+            c.classList.toggle("ea-cur", on ? !(o === "accept" ? A.finals.has(s) : o === "reject") : false);
+            c.classList.toggle("ea-curfinal", on ? (o === "accept" ? A.finals.has(s) : false) : false);
+            c.classList.toggle("ea-curreject", on ? o === "reject" : false);
+        });
+        const used = A.ok ? (sim.used[sim.k - 1] || new Set()) : new Set();
+        Object.keys(diag.edges).forEach((g) => {
+            const on = used.has(g);
+            diag.edges[g].classList.toggle("ea-used", on);
+            diag.edges[g].setAttribute("marker-end", on ? "url(#ea-arrow-used)" : "url(#ea-arrow)");
+            diag.labels[g].classList.toggle("ea-used", on);
+        });
+    }
+
+    function renderButtons() {
+        const fin = finished();
+        $("ea-back").disabled = !A.ok || sim.k === 0;
+        $("ea-reset").disabled = !A.ok;
+        $("ea-step").disabled = fin;
+        $("ea-run").disabled = fin;
+        $("ea-play").disabled = fin;
+        $("ea-play").textContent = playing ? "\u23f8 Pause" : "\u25b6 Abspielen";
+    }
+
+    function render(pulse) {
+        renderTape(pulse);
+        renderStatus();
+        renderLog();
+        highlight();
+        renderButtons();
+        renderTree();
+        if (pulse) {if (A.ok) {pulseStates(cur(), outcome() === "accept" ? "#2e7d32" : null);} }
+    }
+
+    /* ================================================================
+       Berechnungsbaum (nur NEA)
+       ================================================================ */
+    function buildTree() {
+        tree = null;
+        if (!A.ok || A.isDFA) {return;}
+        const w = sim.word, nodes = [];
+        let truncated = false;
+        const mk = (state, pos, parent, via) => {
+            const nd = {state, pos, parent, via, kids: [], depth: parent ? parent.depth + 1 : 0};
+            nodes.push(nd);
+            if (parent) {parent.kids.push(nd);}
+            return nd;
+        };
+        const root = mk("s0", 0, null, null);
+        const queue = [root];
+        while (queue.length) {
+            const nd = queue.shift();
+            if (truncated) {nd.cut = true; continue;}
+            const exps = [];
+            targets(A, nd.state, EPS).forEach((t) => {
+                /* epsilon-Zyklen auf demselben Rechenweg nicht endlos verfolgen */
+                let p = nd, cyc = false;
+                while (p && p.pos === nd.pos) {if (p.state === t) {cyc = true; break;} p = p.parent;}
+                if (!cyc) {exps.push([t, nd.pos, EPS]);}
+            });
+            if (nd.pos < w.length) {targets(A, nd.state, w[nd.pos]).forEach((t) => exps.push([t, nd.pos + 1, w[nd.pos]]));}
+            for (const [t, p, v] of exps) {
+                if (nodes.length >= TREE_MAX) {truncated = true; nd.cut = true; break;}
+                queue.push(mk(t, p, nd, v));
+            }
+        }
+        nodes.forEach((nd) => {
+            if (nd.kids.length || nd.cut) {return;}
+            nd.status = nd.pos === w.length ? (A.finals.has(nd.state) ? "acc" : "rej") : "stuck";
+            if (nd.status === "acc") {for (let p = nd; p; p = p.parent) {p.onAcc = true;} }
+        });
+        tree = {root, nodes, truncated};
+    }
+
+    function renderTree() {
+        const box = $("ea-treebox"), host = $("ea-tree"), sum = $("ea-treesum");
+        if (!tree) {box.hidden = true; return;}
+        box.hidden = false;
+        host.innerHTML = "";
+        sum.innerHTML = "";
+        const k = sim.k, n = sim.word.length, atEnd = k === n || cur().size === 0;
+        const vis = (nd) => nd.pos <= k;
+        const P = new Map();
+        let leaf = 0, maxD = 0;
+        (function lay(nd) {
+            const kids = nd.kids.filter(vis);
+            maxD = Math.max(maxD, nd.depth);
+            if (!kids.length) {P.set(nd, {x: nd.depth, y: leaf++}); return;}
+            kids.forEach(lay);
+            P.set(nd, {x: nd.depth, y: (P.get(kids[0]).y + P.get(kids[kids.length - 1]).y) / 2});
+        })(tree.root);
+
+        const DX = 74, DY = 40, R = 15, PAD = 22;
+        const W = maxD * DX + 2 * PAD + 40, H = (leaf - 1) * DY + 2 * PAD;
+        const S = svg("svg", {width: W, height: H, viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Berechnungsbaum"});
+        const X = (nd) => PAD + R + P.get(nd).x * DX, Y = (nd) => PAD + P.get(nd).y * DY;
+        const gE = svg("g", {}, S), gN = svg("g", {}, S);
+        let acc = 0, dead = 0, running = 0;
+        P.forEach((p, nd) => {
+            if (nd.parent) {
+                const x1 = X(nd.parent) + R, y1 = Y(nd.parent), x2 = X(nd) - R, y2 = Y(nd), mx = (x1 + x2) / 2;
+                const onAcc = atEnd ? !!nd.onAcc : false;
+                svg("path", {d: "M" + fx(x1) + "," + fx(y1) + " C" + fx(mx) + "," + fx(y1) + " " + fx(mx) + "," + fx(y2) + " " + fx(x2) + "," + fx(y2),
+                    "class": "ea-tedge" + (onAcc ? " ea-acc" : "")}, gE);
+                const lab = svg("text", {x: fx(mx), y: fx((y1 + y2) / 2 - 4), "text-anchor": "middle", "class": "ea-elabel"}, gE);
+                lab.textContent = nd.via;
+            }
+            let cls = "ea-tnode", mark = "";
+            const isLeaf = !nd.kids.some(vis);
+            if (nd.cut) {cls += " ea-cut"; mark = "\u2026";}
+            else if (nd.status === "stuck" && nd.pos < k) {cls += " ea-rej"; mark = "\u2717"; dead++;}
+            else if (atEnd && nd.status === "acc") {cls += " ea-acc"; mark = "\u2713"; acc++;}
+            else if (atEnd && nd.status === "rej") {cls += " ea-rej"; mark = "\u2717"; dead++;}
+            else if (nd.pos === k && isLeaf) {cls += " ea-front"; running++;}
+            const g = svg("g", {}, gN);
+            svg("title", {}, g).textContent = nd.state + " nach " + nd.pos + (nd.pos === 1 ? " Zeichen" : " Zeichen");
+            svg("circle", {cx: fx(X(nd)), cy: fx(Y(nd)), r: R, "class": cls}, g);
+            stateText(nd.state, X(nd), Y(nd), g, "ea-tlabel");
+            if (mark) {
+                const m = svg("text", {x: fx(X(nd) + R + 4), y: fx(Y(nd) + 5), "class": "ea-tmark " + (cls.includes("ea-acc") ? "ea-acc" : "ea-rej")}, g);
+                m.textContent = mark;
+            }
+        });
+        host.appendChild(S);
+        host.scrollLeft = host.scrollWidth;
+
+        const parts = [];
+        if (acc) {parts.push(acc + (acc === 1 ? " akzeptierender Rechenweg" : " akzeptierende Rechenwege"));}
+        if (dead) {parts.push(dead + (dead === 1 ? " Rechenweg abgebrochen oder abgelehnt" : " Rechenwege abgebrochen oder abgelehnt"));}
+        if (running) {parts.push(running + (running === 1 ? " Rechenweg läuft weiter" : " Rechenwege laufen weiter"));}
+        add(sum, el("p", "ea-small", parts.join(" \u00b7 ")));
+        if (tree.truncated) {
+            add(sum, el("p", "ea-warning", "Der Baum hat mehr als " + TREE_MAX + " Knoten und wird gekürzt (…). Die aktiven Zustände oben sind trotzdem vollständig."));
+        }
+    }
+
+    /* ================================================================
+       Mehrere Woerter
+       ================================================================ */
+    function runBatch() {
+        batchRan = true;
+        const host = $("ea-batch-res");
+        host.innerHTML = "";
+        if (!A.ok) {add(host, el("div", "ea-error", "Der Automat enthält Fehler (siehe oben)."));return;}
+        const words = $("ea-batch").value.split(/\r?\n/).map((w) => w.trim()).filter((w) => w !== "");
+        if (!words.length) {add(host, el("p", "ea-small", "Keine Wörter eingetragen."));return;}
+        const t = el("table", "ea-tab");
+        add(t, add(el("thead"), add(el("tr"), el("th", null, "Wort"), el("th", null, "Ergebnis"),
+            el("th", null, A.isDFA ? "Zustand am Ende" : "aktive Zustände am Ende"), el("th"))));
+        const tb = el("tbody");
+        let yes = 0;
+        words.forEach((raw) => {
+            const word = parseWord(raw), r = runWord(A, word);
+            if (r.acc) {yes++;}
+            const res = r.acc ? add(el("span"), "\u2713 akzeptiert") :
+                add(el("span"), "\u2717 nicht akzeptiert", r.stuck >= 0 ? el("span", "ea-small", " (kein Übergang bei Zeichen " + (r.stuck + 1) + ")") : null);
+            res.style.color = r.acc ? "#2e7d32" : "#b3361f";
+            add(tb, add(el("tr"), add(el("td"), symEl(word.join("") || "ε")), add(el("td"), res),
+                add(el("td"), stateOrSet(r.set)),
+                add(el("td"), button("abspielen", () => {
+                    $("ea-word").value = word.join("");
+                    loadWord();
+                    $("ea-sim-head").scrollIntoView({behavior: "smooth"});
+                }, "Wort in die Simulation laden"))));
+        });
+        add(host, add(t, tb), el("p", "ea-small", yes + " von " + words.length + (words.length === 1 ? " Wort" : " Wörtern") + " akzeptiert."));
+    }
+
+    /* ================================================================
+       Umformungen
+       ================================================================ */
+    function dfaTable(names, sigma, delta, finalSet, legend, legendTitle) {
+        const t = el("table", "ea-tab");
+        const hr = add(el("tr"), el("th"), el("th", null, "Zustand"));
+        if (legend) {hr.appendChild(el("th", null, legendTitle));}
+        sigma.forEach((a) => hr.appendChild(el("th", null, a)));
+        add(t, add(el("thead"), hr));
+        const tb = el("tbody");
+        names.forEach((s, i) => {
+            const tr = add(el("tr"), el("td", "ea-mark", (i === 0 ? "\u2192" : "") + (finalSet.has(s) ? "*" : "")), add(el("td"), stateEl(s)));
+            if (legend) {tr.appendChild(el("td", "ea-c", legend[i]));}
+            sigma.forEach((a) => tr.appendChild(add(el("td"), stateEl(delta[s + "|" + a]))));
+            tb.appendChild(tr);
+        });
+        return add(t, tb);
+    }
+
+    function applyAutomaton(sigma, names, delta, finalSet, note) {
+        pushUndo();
+        $("ea-sigma").value = sigma.join(", ");
+        rows = [];
+        names.forEach((s) => sigma.forEach((a) => rows.push({from: s, sym: a, to: delta[s + "|" + a]})));
+        finals = new Set(finalSet);
+        extraStates = names.slice();
+        changed(true);
+        add($("ea-transform"), el("div", "ea-good", note + " Mit „↶ Vorheriger Automat“ oben kommen Sie zurück."));
+        window.scrollTo({top: $("ea").offsetTop, behavior: "smooth"});
+    }
+
+    function powerset() {
+        const host = $("ea-transform");
+        host.innerHTML = "";
+        if (!A.ok) {add(host, el("div", "ea-error", "Der Automat enthält Fehler (siehe oben)."));return;}
+        const key = (set) => ordered(A, set).join(",");
+        const start = closure(A, new Set(["s0"]));
+        const list = [start], index = new Map([[key(start), 0]]), delta = {};
+        for (let i = 0; i < list.length; i++) {
+            A.sigma.forEach((a) => {
+                const nxt = closure(A, move(A, list[i], a)), k = key(nxt);
+                if (!index.has(k)) {index.set(k, list.length); list.push(nxt);}
+                delta["s" + i + "|" + a] = "s" + index.get(k);
+            });
+        }
+        const names = list.map((_, i) => "s" + i);
+        const finalSet = new Set(names.filter((_, i) => [...list[i]].some((s) => A.finals.has(s))));
+        const legend = list.map((S) => S.size ? setText(ordered(A, S)) : "\u2205");
+        const box = el("div");
+        add(box, el("h4", null, "Potenzmengenkonstruktion"));
+        if (A.isDFA) {add(box, el("p", "ea-small", "Der Automat ist bereits ein DEA. Die Konstruktion liefert einen gleichwertigen, vollständigen DEA."));}
+        const ul = el("ul");
+        add(ul, add(el("li"), "Startzustand des DEA: ", A.hasEps ? "ε-Hülle({s0}) = " : "", setText(ordered(A, start)), "."));
+        add(ul, el("li", null, "Für jede neue Menge M und jedes Zeichen a: Folgemenge = " + (A.hasEps ? "ε-Hülle der " : "") +
+            "Menge aller Zustände, die von einem Zustand aus M mit a erreichbar sind."));
+        add(ul, el("li", null, "Endzustand des DEA ist jede Menge, die einen Endzustand des NEA enthält."));
+        if (legend.includes("\u2205")) {add(ul, el("li", null, "Die leere Menge ∅ ist der Fehlerzustand: Von dort führt kein Weg mehr zu einem Endzustand."));}
+        add(box, add(el("div", "ea-note"), ul));
+        add(box, el("p", null, "Ergebnis: " + names.length + (names.length === 1 ? " Zustand" : " Zustände") +
+            " (der NEA hat " + A.states.length + ")."));
+        add(box, dfaTable(names, A.sigma, delta, finalSet, legend, "Menge im NEA"));
+        add(box, add(el("div", "ea-bar"), button("Als Automat übernehmen", () =>
+            applyAutomaton(A.sigma, names, delta, finalSet, "Der DEA aus der Potenzmengenkonstruktion wurde übernommen."))));
+        host.appendChild(box);
+    }
+
+    function minimize() {
+        const host = $("ea-transform");
+        host.innerHTML = "";
+        if (!A.ok) {add(host, el("div", "ea-error", "Der Automat enthält Fehler (siehe oben)."));return;}
+        if (!A.isDFA) {
+            add(host, add(el("div", "ea-warning"), "Minimieren geht nur für DEAs. Wandeln Sie den NEA zuerst mit der Potenzmengenkonstruktion um. ",
+                button("NEA → DEA", powerset)));
+            return;
+        }
+        const box = el("div");
+        add(box, el("h4", null, "Minimierung (Tabellenfüllverfahren)"));
+        const reach = reachable(A);
+        const states = A.states.filter((s) => reach.has(s));
+        const steps = el("ol");
+        add(steps, el("li", null, A.unreachable.length ? "Nicht erreichbare Zustände entfernen: " + A.unreachable.join(", ") + "."
+            : "Alle Zustände sind von s0 aus erreichbar."));
+        const sigma = A.sigma;
+        const d = {};
+        let trap = null;
+        states.forEach((s) => sigma.forEach((a) => {
+            const t = targets(A, s, a)[0];
+            if (t === undefined) {trap = trap || uniqueName(A, "sf");}
+            d[s + "|" + a] = t;
+        }));
+        if (trap) {
+            states.forEach((s) => sigma.forEach((a) => {if (d[s + "|" + a] === undefined) {d[s + "|" + a] = trap;} }));
+            states.push(trap);
+            sigma.forEach((a) => {d[trap + "|" + a] = trap;});
+            add(steps, el("li", null, "Der DEA ist unvollständig. Für die Minimierung wird der Fehlerzustand " + trap + " ergänzt."));
+        }
+        const isF = (s) => A.finals.has(s);
+        const n = states.length, pk = (i, j) => (i < j ? i + "," + j : j + "," + i), idx = new Map(states.map((s, i) => [s, i]));
+        const mark = new Map();
+        for (let i = 0; i < n; i++) {for (let j = 0; j < i; j++) {if (isF(states[i]) !== isF(states[j])) {mark.set(pk(i, j), {round: 0});} } }
+        let round = 0, more = true;
+        while (more) {
+            round++;
+            more = false;
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < i; j++) {
+                    if (mark.has(pk(i, j))) {continue;}
+                    for (const a of sigma) {
+                        const p = idx.get(d[states[i] + "|" + a]), q = idx.get(d[states[j] + "|" + a]);
+                        if (p === q) {continue;}
+                        const m = mark.get(pk(p, q));
+                        if (m && m.round < round) {mark.set(pk(i, j), {round, sym: a}); more = true; break;}
+                    }
+                }
+            }
+        }
+        add(steps, el("li", null, "Paare markieren: Runde 0 markiert alle Paare aus einem End- und einem Nicht-Endzustand. " +
+            "In jeder weiteren Runde wird ein Paar markiert, wenn ein Zeichen beide in ein schon markiertes Paar führt."));
+        add(steps, el("li", null, "Unmarkierte Paare (≡) sind äquivalent und werden zusammengefasst."));
+        add(box, add(el("div", "ea-note"), steps));
+
+        /* Dreieckstabelle */
+        const t = el("table", "ea-tab");
+        const tb = el("tbody");
+        for (let i = 1; i < n; i++) {
+            const tr = add(el("tr"), add(el("th"), stateEl(states[i])));
+            for (let j = 0; j < n - 1; j++) {
+                if (j >= i) {tr.appendChild(el("td", "ea-blank")); continue;}
+                const m = mark.get(pk(i, j));
+                const td = el("td", "ea-c " + (m ? "ea-x" : "ea-eq"), m ? "\u00d7" + m.round + (m.sym ? " (" + m.sym + ")" : "") : "\u2261");
+                td.title = m ? (m.round === 0 ? "genau einer ist Endzustand" : "mit " + m.sym + " in ein Paar aus Runde " + (m.round - 1) + " oder früher") : "äquivalent";
+                tr.appendChild(td);
+            }
+            tb.appendChild(tr);
+        }
+        const fr = add(el("tr"), el("th"));
+        for (let j = 0; j < n - 1; j++) {fr.appendChild(add(el("th"), stateEl(states[j])));}
+        tb.appendChild(fr);
+        if (n > 1) {add(box, add(t, tb), el("p", "ea-small", "×k (a): in Runde k markiert, wegen Zeichen a. ≡: äquivalent."));}
+
+        /* Klassen bilden */
+        const cls = states.map((_, i) => i);
+        const find = (i) => (cls[i] === i ? i : (cls[i] = find(cls[i])));
+        for (let i = 0; i < n; i++) {for (let j = 0; j < i; j++) {if (!mark.has(pk(i, j))) {cls[find(i)] = find(j);} } }
+        const groupsOf = new Map();
+        states.forEach((s, i) => {
+            const r = find(i);
+            if (!groupsOf.has(r)) {groupsOf.set(r, []);}
+            groupsOf.get(r).push(s);
+        });
+        /* neue Namen in Erreichbarkeitsreihenfolge, Startklasse = s0 */
+        const repOf = (s) => find(idx.get(s));
+        const order = [repOf("s0")], name = new Map([[repOf("s0"), "s0"]]);
+        for (let i = 0; i < order.length; i++) {
+            const rep = groupsOf.get(order[i])[0];
+            sigma.forEach((a) => {
+                const r = repOf(d[rep + "|" + a]);
+                if (!name.has(r)) {name.set(r, "s" + order.length); order.push(r);}
+            });
+        }
+        const names = order.map((r) => name.get(r));
+        const delta = {};
+        order.forEach((r) => sigma.forEach((a) => {delta[name.get(r) + "|" + a] = name.get(repOf(d[groupsOf.get(r)[0] + "|" + a]));}));
+        const finalSet = new Set(order.filter((r) => isF(groupsOf.get(r)[0])).map((r) => name.get(r)));
+        const legend = order.map((r) => setText(groupsOf.get(r)));
+
+        const already = names.length === A.states.length;
+        add(box, el("p", null, already ? "Der Automat ist bereits minimal: Es gibt keine äquivalenten Zustände."
+            : "Minimaler DEA: " + names.length + (names.length === 1 ? " Zustand" : " Zustände") + " statt " + A.states.length + "."));
+        add(box, dfaTable(names, sigma, delta, finalSet, legend, "fasst zusammen"));
+        if (!already) {
+            add(box, add(el("div", "ea-bar"), button("Als Automat übernehmen", () =>
+                applyAutomaton(sigma, names, delta, finalSet, "Der minimierte DEA wurde übernommen."))));
+        }
+        host.appendChild(box);
+    }
+
+    /* ================================================================
+       Bedienelemente
+       ================================================================ */
+    const exSel = $("ea-example");
+    EXAMPLES.forEach((ex, i) => {
+        const o = el("option", null, ex.name);
+        o.value = String(i);
+        exSel.appendChild(o);
+    });
+
+    function renderTests(list) {
+        const box = $("ea-tests");
+        box.innerHTML = "";
+        if (!list) {return;}
+        add(box, el("span", "ea-small", "Testwörter:"));
+        list.forEach((w) => {
+            const b = button(w === "" ? "ε (leer)" : w, () => {$("ea-word").value = w; loadWord();}, "Wort in die Simulation laden");
+            b.className = "ea-chip";
+            box.appendChild(b);
+        });
+    }
+
+    function loadExample(i) {
+        const ex = EXAMPLES[i];
+        $("ea-sigma").value = ex.sigma;
+        $("ea-word").value = ex.word;
+        $("ea-batch").value = ex.tests.map((w) => w || "ε").join("\n");
+        rows = ex.rows.map(([from, sym, to]) => ({from, sym, to}));
+        finals = new Set(ex.finals);
+        extraStates = [];
+        renderTests(ex.tests);
+        $("ea-batch-res").innerHTML = "";
+        batchRan = false;
+        changed(true);
+    }
+
+    $("ea-load-example").addEventListener("click", () => loadExample(parseInt(exSel.value, 10) || 0));
+    $("ea-clear").addEventListener("click", () => {
+        pushUndo();
+        $("ea-sigma").value = "a, b";
+        $("ea-word").value = "";
+        rows = [emptyRow(), emptyRow(), emptyRow()];
+        finals = new Set();
+        extraStates = [];
+        renderTests(null);
+        changed(true);
+    });
+    $("ea-undo").addEventListener("click", () => {
+        const sn = undoStack.pop();
+        if (sn) {restore(sn); changed(true);}
+        $("ea-undo").hidden = !undoStack.length;
+    });
+    $("ea-view-list").addEventListener("click", () => {view = "list"; renderTableView();});
+    $("ea-view-matrix").addEventListener("click", () => {view = "matrix"; renderTableView();});
+    $("ea-sigma").addEventListener("input", () => changed(view === "matrix" ? true : false));
+
+    /* epsilon in das zuletzt benutzte Feld */
+    $("ea").addEventListener("focusin", (e) => {if (e.target.tagName === "INPUT" && e.target.type === "text") {lastInput = e.target;} });
+    $("ea-ins-eps").addEventListener("mousedown", (e) => e.preventDefault());
+    $("ea-ins-eps").addEventListener("click", () => {
+        const inp = lastInput;
+        if (!inp || !document.body.contains(inp)) {return;}
+        inp.focus();
+        if (inp.classList.contains("ea-one")) {
+            inp.value = EPS;
+        } else {
+            const a = inp.selectionStart == null ? inp.value.length : inp.selectionStart;
+            const b = inp.selectionEnd == null ? a : inp.selectionEnd;
+            inp.value = inp.value.slice(0, a) + EPS + inp.value.slice(b);
+            inp.setSelectionRange(a + 1, a + 1);
+        }
+        inp.dispatchEvent(new Event("input", {bubbles: true}));
+        inp.dispatchEvent(new Event("change", {bubbles: true}));
+    });
+
+    $("ea-import").addEventListener("click", () => {
+        const res = parseText($("ea-text").value);
+        if (!res.rows.length) {$("ea-textmsg").textContent = "Im Text wurde keine Übergangszeile gefunden."; return;}
+        pushUndo();
+        rows = res.rows;
+        if (res.sigma !== null) {$("ea-sigma").value = res.sigma;}
+        finals = new Set(res.finals || []);
+        extraStates = (res.finals || []).slice();
+        renderTests(null);
+        changed(true);
+        $("ea-textmsg").textContent = res.rows.length + " Zeilen übernommen.";
+    });
+    $("ea-export").addEventListener("click", () => {
+        $("ea-text").value = exportText();
+        $("ea-textmsg").textContent = "Der Automat steht jetzt im Textfeld.";
+    });
+
+    $("ea-load").addEventListener("click", loadWord);
+    $("ea-word").addEventListener("keydown", (e) => {if (e.key === "Enter") {e.preventDefault(); loadWord();} });
+    $("ea-reset").addEventListener("click", loadWord);
+    $("ea-back").addEventListener("click", () => {stopPlay(); back(); render(true);});
+    $("ea-step").addEventListener("click", () => {stopPlay(); step(); render(true);});
+    $("ea-run").addEventListener("click", runToEnd);
+    $("ea-play").addEventListener("click", () => {
+        if (playing) {stopPlay(); render(false);} else if (!finished()) {playing = true; tick();}
+    });
+    $("ea-batch-run").addEventListener("click", runBatch);
+    $("ea-btn-powerset").addEventListener("click", powerset);
+    $("ea-btn-min").addEventListener("click", minimize);
+
+    loadExample(0);
+})();
+</script>
+</body>
+</html>
