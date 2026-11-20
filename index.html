@@ -97,7 +97,7 @@
         #ea table.ea-tab .ea-nr {color: #777; text-align: right;}
         #ea table.ea-tab .ea-mark {color: #3367d6; font-weight: 700; text-align: center; white-space: nowrap;}
         #ea table.ea-tab tr.ea-err td {background: #fdeeee;}
-        #ea table.ea-tab td.ea-c {text-align: center; font-family: ui-monospace, SFMono-Regular, Consolas, monospace;}
+        #ea table.ea-tab td.ea-center {white-space: nowrap; text-align: center; font-family: ui-monospace, SFMono-Regular, Consolas, monospace;}
         #ea table.ea-tab td.ea-x {color: #b3361f;}
         #ea table.ea-tab td.ea-eq {background: #dff2df; color: #1e6b22; font-weight: 700;}
         #ea table.ea-tab td.ea-blank {border: none; background: transparent;}
@@ -1352,7 +1352,7 @@
         const tb = el("tbody");
         names.forEach((s, i) => {
             const tr = add(el("tr"), el("td", "ea-mark", (i === 0 ? "\u2192" : "") + (finalSet.has(s) ? "*" : "")), add(el("td"), stateEl(s)));
-            if (legend) {tr.appendChild(el("td", "ea-c", legend[i]));}
+            if (legend) {tr.appendChild(el("td", "ea-center", legend[i]));}
             sigma.forEach((a) => tr.appendChild(add(el("td"), stateEl(delta[s + "|" + a]))));
             tb.appendChild(tr);
         });
@@ -1469,7 +1469,7 @@
             for (let j = 0; j < n - 1; j++) {
                 if (j >= i) {tr.appendChild(el("td", "ea-blank")); continue;}
                 const m = mark.get(pk(i, j));
-                const td = el("td", "ea-c " + (m ? "ea-x" : "ea-eq"), m ? "\u00d7" + m.round + (m.sym ? " (" + m.sym + ")" : "") : "\u2261");
+                const td = el("td", "ea-center " + (m ? "ea-x" : "ea-eq"), m ? "\u00d7" + m.round + (m.sym ? " (" + m.sym + ")" : "") : "\u2261");
                 td.title = m ? (m.round === 0 ? "genau einer ist Endzustand" : "mit " + m.sym + " in ein Paar aus Runde " + (m.round - 1) + " oder früher") : "äquivalent";
                 tr.appendChild(td);
             }
